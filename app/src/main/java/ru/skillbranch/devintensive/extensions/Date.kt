@@ -2,74 +2,65 @@ package ru.skillbranch.devintensive.extensions
 
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.math.abs
-import kotlin.math.min
+import java.util.concurrent.TimeUnit
 
-const val SECONDS = 1000L
-const val MINUTES = 60 * SECONDS
-const val HOURS = 60 * MINUTES
-const val DAYS = 24 * HOURS
+const val SECOND = 1000L
+const val MUNUTE = 60 * SECOND
+const val HOUR = 60 * MUNUTE
+const val DAY = 24 * HOUR
 
-fun Date.format(pattern:String = "HH:mm:ss dd.MM.yy"):String {
+fun Date.format(pattern: String = "HH:mm:ss dd.MM.YY"): String {
     val dateFormat = SimpleDateFormat(pattern, Locale("ru"))
     return dateFormat.format(this)
 }
 
-fun Date.add(value: Int, units: TimeUnits = TimeUnits.SECOND): Date {
+fun Date.add(value: Int, timeUnits: MyTimeUnits): Date {
     var time = this.time
 
-    time += when(units){
-        TimeUnits.SECOND -> value * SECONDS
-        TimeUnits.MINUTE -> value * MINUTES
-        TimeUnits.HOUR -> value * HOURS
-        TimeUnits.DAY -> value * DAYS
+    time += when (timeUnits) {
+        MyTimeUnits.SECOND -> value * SECOND
+        MyTimeUnits.MINUTE -> value * MUNUTE
+        MyTimeUnits.HOUR -> value * HOUR
+        MyTimeUnits.DAY -> value * DAY
     }
     this.time = time
     return this
 }
 
-fun Date.humanizeDiff(date:Date = Date()): String {
-    val diff = (date.time - this.time)
-
-    fun pluralForm(number:Int, words:ArrayList<String>):String {
-        val cases = arrayListOf (2, 0, 1, 1, 1, 2)
-        return words[if(number%100 in 5..19) 2 else cases[min(number%10, 5)]]
+fun Date.humanizeDiff(date: Date = Date()): String {
+    var timeOne = this.time
+    val diffOne: Long = Date().time - timeOne
+    val diffSecond: Long = TimeUnit.MILLISECONDS.toSeconds(diffOne)
+    var result = when (diffSecond) {
+        in (0..1) -> "только что"
+        in (2..75) -> "минуту назад"
+        in (76..5 * 60 - 1) -> "${diffSecond / 60} минуты назад"
+        in (5 * 60..45 * 60) -> "${diffSecond / 60} минут назад"
+        in (45 * 60 + 1..75 * 60) -> "час назад"
+        in (75 * 60 + 1..5 * 3600 - 1) -> "${diffSecond / 3600} часа назад"
+        in (5 * 3600..22 * 3600) -> "${diffSecond / 3600} часов назад"
+        in (22 * 3600 + 1..26 * 3600) -> "день назад"
+        in (26 * 3600 + 1..5 * 86400 - 1) -> "${diffSecond / 86400} дня назад"
+        in (26 * 3600 + 1..360 * 86400) -> "${diffSecond / 86400} дней назад"
+        in (-1..0) -> "только что"
+        in (-75..-2) -> "через минуту"
+        in (-5 * 60 + 1..-76) -> "через ${Math.abs(diffSecond / 60) + 1} минуты"
+        in (-45 * 60..-5 * 60) -> "через ${Math.abs(diffSecond / 60) + 1} минут"
+        in (-75 * 60 + 1..-45 * 60 - 1) -> "через час"
+        in (-5 * 3600 + 1..-75 * 60) -> "через ${Math.abs(diffSecond / 3600) + 1} часа"
+        in (-22 * 3600..-5 * 3600) -> "через ${Math.abs(diffSecond / 3600) + 1} часов"
+        in (-26 * 3600..-22 * 3600 - 1) -> "через день"
+        in (-5 * 86400 + 1..-26 * 3600 - 1) -> "через ${Math.abs(diffSecond / 86400) + 1} дня"
+        in (-360 * 86400..-5 * 86400) -> "через ${Math.abs(diffSecond / 86400) + 1} дней"
+        else -> if (diffSecond < -360 * 86400 - 1) "более чем через год" else if (diffSecond > 360 * 86400) "более года назад"
+        else "неизвестно"
     }
-
-    return when{
-        diff < -360 * DAYS-> "более чем через год"
-        diff < -26 * HOURS -> "через ${abs(diff / DAYS)} ${pluralForm(abs((diff / DAYS).toInt()), arrayListOf("день", "дня", "дней"))}"
-        diff < -22 * HOURS -> "через день"
-        diff < -75 * MINUTES -> "через ${abs(diff / HOURS)} ${pluralForm(abs((diff / HOURS).toInt()), arrayListOf("час", "часа", "часов"))}"
-        diff < -45 * MINUTES -> "через час"
-        diff < -75 * SECONDS -> "через ${abs(diff / MINUTES)} ${pluralForm(abs((diff / MINUTES).toInt()), arrayListOf("минуту", "минуты", "минут"))}"
-        diff < -45 * SECONDS -> "через минуту"
-        diff < -1 -> "через несколько секунд"
-        diff <= 1 * SECONDS -> "только что"
-        diff <= 45 * SECONDS -> "несколько секунд назад"
-        diff <= 75 * SECONDS-> "минуту назад"
-        diff <= 45 * MINUTES -> "${abs(diff / MINUTES)} ${pluralForm(abs((diff / MINUTES).toInt()), arrayListOf("минуту", "минуты", "минут"))} назад"
-        diff <= 75 * MINUTES -> "час назад"
-        diff <= 22 * HOURS -> "${abs(diff / HOURS)} ${pluralForm(abs((diff / HOURS).toInt()), arrayListOf("час", "часа", "часов"))} назад"
-        diff <= 26 * HOURS -> "день назад"
-        diff <= 360 * DAYS -> "${abs(diff / DAYS)} ${pluralForm(abs((diff / DAYS).toInt()), arrayListOf("день", "дня", "дней"))} назад"
-        diff > 360 * DAYS -> "более года назад"
-        else -> "Wrong date"
-    }
+    return result
 }
 
-enum class TimeUnits{
-    SECOND, MINUTE, HOUR, DAY;
-
-    fun plural(number: Int):String {
-        val cases = arrayListOf(2, 0, 1, 1, 1, 2)
-        val words = when (this) {
-            SECOND -> arrayListOf<String>("секунду", "секунды", "секунд")
-            MINUTE -> arrayListOf<String>("минуту", "минуты", "минут")
-            HOUR -> arrayListOf<String>("час", "часа", "часов")
-            DAY -> arrayListOf<String>("день", "дня", "дней")
-        }
-        return "$number ${words[if (number % 100 in 5..19) 2 else cases[min(number % 10, 5)]]}"
-    }
+enum class MyTimeUnits {
+    SECOND,
+    MINUTE,
+    HOUR,
+    DAY
 }

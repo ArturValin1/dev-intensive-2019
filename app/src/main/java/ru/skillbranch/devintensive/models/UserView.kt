@@ -1,21 +1,21 @@
 package ru.skillbranch.devintensive.models
 
-class UserView (
-    val id:String,
-    val fullName:String,
-    val nickName:String,
-    var avatar:String?,
-    var status:String = "offline",
-    val initials:String?
-){
-    fun printMe(){
-        println("""
-            id: $id
-            fullName: $fullName
-            nickName: $nickName
-            avatar: $avatar
-            status: $status
-            initials: $initials
-        """.trimIndent())
-    }
+class UserView(
+    val id: String,
+    val fullname: String,
+    val nickname: String,
+    var avatar: String? = null,
+    var status: String = "offline",
+    val initials: String?
+) {
+    fun printMe() = println(
+        """        
+        id ${id}
+        fullname ${fullname}
+        nickname ${nickname}
+        avatar ${avatar}
+        status ${status}
+        initials ${initials}        
+    """.trimIndent()
+    )
 }
